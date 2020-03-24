@@ -1,0 +1,97 @@
+<html>
+
+<head>
+    <title>Socket.IO chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font: 13px Helvetica, Arial;
+        }
+
+        form {
+            background: #000;
+            padding: 3px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        form input {
+            border: 0;
+            padding: 10px;
+            width: 80%;
+            margin-right: .5%;
+        }
+
+        form button {
+            width: 19%;
+            background: rgb(130, 224, 255);
+            border: none;
+            padding: 10px;
+        }
+
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #messages li {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // 这样就加载了 socket.io-client。 socket.io-client 暴露了一个 io 全局变量，然后连接服务器。
+        //请注意我们在调用 io() 时没有指定任何 URL，因为它默认将尝试连接到提供当前页面的主机。
+        window.onload = function () {
+            var username = prompt("请输入你的用户名：", "");
+            var who = prompt("你要和谁聊天？：", "");
+            document.body.innerHTML = `<h3>当前用户：${username}, 和${who}聊天中...</h3>` + document.body.innerHTML;
+            var socket = io("http://localhost:3000/");
+            var form = document.querySelector("form");
+            var val = document.querySelector("#m");
+            //先和服务端建立连接
+            let conobj = {
+                username: username,
+                toWho: who,
+            }
+            socket.emit('con', JSON.stringify(conobj));
+            //表单提交事件
+            form.onsubmit = function () {
+                let obj = {
+                    username: username,
+                    toWho: who,
+                    mes: val.value
+                }
+                socket.emit('chat message', JSON.stringify(obj));
+                messages.innerHTML += `
+<li style="text-align:right;color:blue;">${val.value}<li>`;
+                val.value = "";
+                return false;
+            }
+            //接收后端发来的消息
+            socket.on("receiveMessage", function (data) {
+                var obj = JSON.parse(data);
+                console.log(obj)
+                if (obj.username == username) return; //不接受自己发的消息
+                messages.innerHTML += `
+<li style="text-align:left;color:red;">${obj.usernamez}:${obj.mes}<li>`;
+            })
+        }
+    </script>
+    <ul id="messages"></ul>
+    <form action="">
+        <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+</body>
+
+</html>
